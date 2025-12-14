@@ -71,10 +71,15 @@ def add_student():
 
     connection = sqlite3.connect("instance/students.db")
     cursor = connection.cursor()
-    query = (
-        f"INSERT INTO student (name, age, grade) VALUES ('{name}', {age}, '{grade}')"
-    )
-    cursor.execute(query)
+    # query = (
+    #     f"INSERT INTO student (name, age, grade) VALUES ('{name}', {age}, '{grade}')"
+    # )
+    # cursor.execute(query)
+    db.session.execute(
+    text("INSERT INTO student (name, age, grade) VALUES (:name, :age, :grade)"),
+    {"name": name, "age": age, "grade": grade}
+        )
+    db.session.commit()
     connection.commit()
     connection.close()
 
