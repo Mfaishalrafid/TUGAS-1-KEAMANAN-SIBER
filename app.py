@@ -1,5 +1,14 @@
 # penambahan session yang digunakan untuk menyimpan status login pengguna
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    flash,
+    get_flashed_messages,
+)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 import sqlite3
@@ -69,19 +78,16 @@ def add_student():
     age = request.form["age"]
     grade = request.form["grade"]
 
-    connection = sqlite3.connect("instance/students.db")
-    cursor = connection.cursor()
-    # query = (
-    #     f"INSERT INTO student (name, age, grade) VALUES ('{name}', {age}, '{grade}')"
-    # )
-    # cursor.execute(query)
+    # Validasi input: tidak boleh mengandung tanda petik
+    if "'" in name or '"' in name or "'" in grade or '"' in grade:
+        flash("Input tidak valid: name/grade tidak boleh mengandung tanda petik.")
+        return redirect(url_for("index"))
+
     db.session.execute(
-    text("INSERT INTO student (name, age, grade) VALUES (:name, :age, :grade)"),
-    {"name": name, "age": age, "grade": grade}
-        )
+        text("INSERT INTO student (name, age, grade) VALUES (:name, :age, :grade)"),
+        {"name": name, "age": age, "grade": grade},
+    )
     db.session.commit()
-    connection.commit()
-    connection.close()
 
     return redirect(url_for("index"))
 
@@ -91,7 +97,7 @@ def delete_student(id):
     if "user" not in session or session["user"] != "admin":
         return redirect(url_for("login"))
 
-    db.session.execute(text(f"DELETE FROM student WHERE id={id}"))
+    db.session.execute(text("DELETE FROM student WHERE id = :id"), {"id": id})
     db.session.commit()
     return redirect(url_for("index"))
 
@@ -106,16 +112,22 @@ def edit_student(id):
         age = request.form["age"]
         grade = request.form["grade"]
 
+        # Validasi input: tidak boleh mengandung tanda petik
+        if "'" in name or '"' in name or "'" in grade or '"' in grade:
+            flash("Input tidak valid: name/grade tidak boleh mengandung tanda petik.")
+            return redirect(url_for("index"))
+
         db.session.execute(
             text(
-                f"UPDATE student SET name='{name}', age={age}, grade='{grade}' WHERE id={id}"
-            )
+                "UPDATE student SET name = :name, age = :age, grade = :grade WHERE id = :id"
+            ),
+            {"name": name, "age": age, "grade": grade, "id": id},
         )
         db.session.commit()
         return redirect(url_for("index"))
 
     student = db.session.execute(
-        text(f"SELECT * FROM student WHERE id={id}")
+        text("SELECT * FROM student WHERE id = :id"), {"id": id}
     ).fetchone()
     return render_template("edit.html", student=student)
 
