@@ -1,14 +1,5 @@
 # penambahan session yang digunakan untuk menyimpan status login pengguna
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    session,
-    flash,
-    get_flashed_messages,
-)
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 import sqlite3
@@ -78,11 +69,16 @@ def add_student():
     age = request.form["age"]
     grade = request.form["grade"]
 
-    # Validasi input: tidak boleh mengandung tanda petik
-    if "'" in name or '"' in name or "'" in grade or '"' in grade:
-        flash("Input tidak valid: name/grade tidak boleh mengandung tanda petik.")
+    # Validasi input: tidak boleh mengandung karakter khusus
+    forbidden = ["'", '"', ";", "--", "/*", "*/"]
+    if any(sub in name for sub in forbidden) or any(sub in grade for sub in forbidden):
+        flash("Input tidak valid: tidak boleh mengandung karakter khusus.")
         return redirect(url_for("index"))
 
+    # query = (
+    #     f"INSERT INTO student (name, age, grade) VALUES ('{name}', {age}, '{grade}')"
+    # )
+    # cursor.execute(query)
     db.session.execute(
         text("INSERT INTO student (name, age, grade) VALUES (:name, :age, :grade)"),
         {"name": name, "age": age, "grade": grade},
@@ -112,9 +108,14 @@ def edit_student(id):
         age = request.form["age"]
         grade = request.form["grade"]
 
-        # Validasi input: tidak boleh mengandung tanda petik
-        if "'" in name or '"' in name or "'" in grade or '"' in grade:
-            flash("Input tidak valid: name/grade tidak boleh mengandung tanda petik.")
+        # Validasi input: tidak boleh mengandung karakter khusus
+        forbidden = ["'", '"', ";", "--", "/*", "*/"]
+        if (
+            any(sub in name for sub in forbidden)
+            or any(sub in age for sub in forbidden)
+            or any(sub in grade for sub in forbidden)
+        ):
+            flash("Input tidak valid: tidak boleh mengandung karakter khusus.")
             return redirect(url_for("index"))
 
         db.session.execute(
